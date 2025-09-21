@@ -20,20 +20,28 @@ defineProps({
 
 const form = useForm({
     project_id: '',
-    file_name: '', // Matches backend expectation
+    file_name: '',
     storage_disk: 'local',
+    frequency: null,
+    time: null,
 })
 
 const touched = ref({
     project_id: false,
     file_name: false,
-    storage_disk: false
+    storage_disk: false,
+    frequency: false,  // New field for validation
+    time: false,       // New field for validation
 })
+
+const autoBackupEnabled = ref(false) // Toggle state (not stored)
 
 const errors = computed(() => ({
     project_id: touched.value.project_id && !form.project_id ? 'Project is required' : '',
     file_name: touched.value.file_name && !form.file_name ? 'File name is required' : '',
-    storage_disk: touched.value.storage_disk && !form.storage_disk ? 'Storage disk is required' : ''
+    storage_disk: touched.value.storage_disk && !form.storage_disk ? 'Storage disk is required' : '',
+    frequency: touched.value.frequency && autoBackupEnabled.value && !form.frequency ? 'Frequency is required' : '',
+    time: touched.value.time && autoBackupEnabled.value && !form.time ? 'Backup time is required' : '',
 }))
 
 const isValid = computed(() => {
@@ -58,10 +66,18 @@ const handleSubmit = () => {
         return
     }
 
-    form.post('/backups/store-backup', {
-        onSuccess: (page) => {
-            const successMessage = page.props.flash?.status; // Updated to match 'status' from backend
+    // Only send frequency and time if auto backup is enabled
+    const data = {
+        project_id: form.project_id,
+        file_name: form.file_name,
+        storage_disk: form.storage_disk,
+        ...(autoBackupEnabled.value && { frequency: form.frequency, time: form.time }),
+    }
 
+    form.post('/backups/store-backup', {
+        data: data,
+        onSuccess: (page) => {
+            const successMessage = page.props.flash?.status
             Swal.fire({
                 icon: "success",
                 title: "Success",
@@ -69,7 +85,6 @@ const handleSubmit = () => {
             }).then(() => {
                 router.visit('/backups/manage-backups')
             })
-
             form.reset()
             Object.keys(touched.value).forEach(key => touched.value[key] = false)
         },
@@ -77,7 +92,6 @@ const handleSubmit = () => {
             const errorList = Object.values(serverErrors.file_name || serverErrors.filename || {})
                 .map(error => `<li>${error}</li>`)
                 .join("")
-
             Swal.fire({
                 icon: "error",
                 title: "Validation Error",
@@ -144,6 +158,56 @@ const handleSubmit = () => {
                                 {{ errors.storage_disk }}
                             </div>
                         </div>
+
+                        <!-- Auto Backup Toggle and Fields -->
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input
+                                    type="checkbox"
+                                    class="form-check-input"
+                                    id="autoBackupToggle"
+                                    v-model="autoBackupEnabled"
+                                    @change="touched.frequency = true; touched.time = true"
+                                >
+                                <label class="form-check-label" for="autoBackupToggle">Enable Auto Backups</label>
+                            </div>
+                            <div v-if="autoBackupEnabled" class="mt-3">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="frequency" class="form-label">Frequency</label>
+                                        <select
+                                            class="form-select"
+                                            id="frequency"
+                                            v-model="form.frequency"
+                                            @blur="touched.frequency = true"
+                                            :class="{ 'is-invalid': errors.frequency && touched.frequency }"
+                                        >
+                                            <option value="daily">Daily</option>
+                                            <option value="weekly">Weekly</option>
+                                            <option value="monthly">Monthly</option>
+                                        </select>
+                                        <div v-if="errors.frequency && touched.frequency" class="invalid-feedback">
+                                            {{ errors.frequency }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="backupTime" class="form-label">Backup Time</label>
+                                        <input
+                                            type="time"
+                                            class="form-control"
+                                            id="backupTime"
+                                            v-model="form.time"
+                                            @blur="touched.time = true"
+                                            :class="{ 'is-invalid': errors.time && touched.time }"
+                                        >
+                                        <div v-if="errors.time && touched.time" class="invalid-feedback">
+                                            {{ errors.time }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <button type="submit" class="btn btn-primary" :disabled="form.processing">
                             {{ form.processing ? 'Creating...' : 'Create Backup' }}
                         </button>&nbsp;

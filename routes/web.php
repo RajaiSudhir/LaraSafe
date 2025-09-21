@@ -26,5 +26,8 @@ Route::prefix('/backups')->group(function () {
     Route::post('/retry-backup/{id}', [BackupController::class, 'retryBackup'])->name('retry-backup');
     Route::delete('/delete-backup/{id}', [BackupController::class, 'destroy'])->name('backups.destroy');
     Route::get('/download/{id}', [BackupController::class, 'download'])->name('download.backup');
+    Route::get('/edit-backup/{id}', [BackupController::class, 'edit'])->name('edit-backup');
+    Route::get('/edit-backup/{id}', [BackupController::class, 'edit'])->name('backups.edit');
+    Route::put('/update-backup/{id}', [BackupController::class, 'updateBackup'])->name('backups.update');
 });
 

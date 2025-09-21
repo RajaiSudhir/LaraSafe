@@ -14,12 +14,12 @@ defineProps({
     backups: {
         type: Array,
         default: () => [],
-    }
+    },
 })
 
 const deleting = ref(null)
-const retrying = ref(null) // Track retrying state
-const downloading = ref(null) // New ref to track downloading state
+const retrying = ref(null)
+const downloading = ref(null)
 
 const handleDelete = (backupId) => {
     Swal.fire({
@@ -89,6 +89,29 @@ const handleDownload = (backupId) => {
         },
     })
 }
+
+// Method to format size in MB or GB
+const formatSize = (bytes) => {
+    if (!bytes && bytes !== 0) return 'N/A'
+    const mb = bytes / (1024 * 1024)
+    const gb = bytes / (1024 * 1024 * 1024)
+    if (gb >= 1) return `${gb.toFixed(2)} GB`
+    return `${mb.toFixed(2)} MB`
+}
+
+// Method to format date to human-readable form
+const formatDate = (dateStr) => {
+    if (!dateStr) return 'N/A'
+    const date = new Date(dateStr)
+    return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+    })
+}
 </script>
 
 <template>
@@ -110,6 +133,8 @@ const handleDownload = (backupId) => {
                                     <th scope="col">Storage Path</th>
                                     <th scope="col">Size</th>
                                     <th scope="col">Status</th>
+                                    <th scope="col">Backup Frequency</th>
+                                    <th scope="col">Next Backup</th>
                                     <th scope="col">Created At</th>
                                     <th scope="col">Actions</th>
                                 </tr>
@@ -123,12 +148,13 @@ const handleDownload = (backupId) => {
                                     <td>{{ backup.project ? backup.project.name : 'N/A' }}</td>
                                     <td>{{ backup.file_name || 'N/A' }}</td>
                                     <td>{{ backup.storage_disk || 'N/A' }}</td>
-                                    <td>{{ backup.size || 'N/A' }}</td>
+                                    <td>{{ formatSize(backup.size) }}</td> <!-- Converted to MB/GB -->
                                     <td>{{ backup.status || 'N/A' }}</td>
-                                    <td>{{ backup.created_at || 'N/A' }}</td>
+                                    <td>{{ backup.backup_frequency || 'N/A' }}</td>
+                                    <td>{{ formatDate(backup.next_backup_at) || 'N/A' }}</td>
+                                    <td>{{ formatDate(backup.created_at) }}</td> <!-- Human-readable date -->
                                     <td>
                                         <div class="d-flex">
-                                            <Link :href="`/backups/${backup.id}`" class="btn btn-sm btn-light-info text-info me-1" title="View"><i class="ti ti-eye"></i></Link>
                                             <button
                                                 @click.prevent="handleRetry(backup.id)"
                                                 class="btn btn-sm btn-light-warning text-warning me-1"
@@ -137,6 +163,7 @@ const handleDownload = (backupId) => {
                                             >
                                                 <i class="ti ti-refresh"></i>
                                             </button>
+                                            <Link :href="`/backups/edit-backup/${backup.id}`" class="btn btn-sm btn-light-info text-info me-1" title="Edit"><i class="ti ti-edit"></i></Link>
                                             <a
                                                 :href="`/backups/download/${backup.id}`"
                                                 class="btn btn-sm btn-light-success text-success me-1"
@@ -145,7 +172,6 @@ const handleDownload = (backupId) => {
                                             >
                                                 <i class="ti ti-download"></i>
                                             </a>
-
                                             <button
                                                 @click.prevent="handleDelete(backup.id)"
                                                 class="btn btn-sm btn-light-danger text-danger"

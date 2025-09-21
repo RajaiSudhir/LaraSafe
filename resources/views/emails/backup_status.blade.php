@@ -97,13 +97,13 @@
         </div>
         <div class="content">
             <div class="card">
-                <div class="card-title">Backup Details for Project: Village On Web</div>
+                <div class="card-title">Backup Details for Project: {{ $backup->project->name }}</div>
                 <p>Hello,</p>
-                <p>The backup process for your project <strong>Village On Web</strong> has been completed with the following details:</p>
+                <p>The backup process for your project <strong>{{ $backup->project->name }}</strong> has been completed with the following details:</p>
                 <table class="table">
                     <tr>
                         <th>Filename</th>
-                        <td>villageonweb.zip</td>
+                        <td>{{ $backup->file_name }}</td>
                     </tr>
                     <tr>
                         <th>Status</th>
@@ -111,20 +111,20 @@
                     </tr>
                     <tr>
                         <th>Size</th>
-                        <td>{{ $backup->size / 1024 / 1024 }} MB</td>
+                        <td>{{ number_format($backup->size / 1024 / 1024, 2) }} MB</td>
                     </tr>
                     <tr>
                         <th>Created At</th>
                         <td>{{ $backup->created_at->format('d-m-Y H:i') }}</td>
                     </tr>
                 </table>
-                @if($backup->status === 'completed')
-                <p><a href="http://yourdomain.com/backups/download/1" class="btn btn-primary">Download Backup</a></p>
+                @if($backup->status === 'success')
+                <p><a href="http://http://127.0.0.1:9000/backups/" class="btn btn-primary">Download Backup</a></p>
                 @endif
             </div>
             <div class="footer">
                 Thank you,<br>Backup System<br>
-                &copy; 2025 Your Company. All rights reserved.
+                &copy; 2025 Sudhir Rajai. All rights reserved.
             </div>
         </div>
     </div>

@@ -29,31 +29,31 @@ class BackupProjectJob implements ShouldQueue
     {
         $project   = $this->backup->project;
         $sourceDir = rtrim($project->path, '/');
-        $fileName  = pathinfo($this->backup->file_name, PATHINFO_FILENAME) . '.zip';
+        $baseName  = pathinfo($this->backup->file_name, PATHINFO_FILENAME);
         $disk      = $this->backup->storage_disk ?? 'local';
-
+    
         // Create folder inside storage for this project's backups
         $backupFolder = "backups/{$project->file_name}";
         Storage::disk($disk)->makeDirectory($backupFolder);
-
-        // Absolute path for zip (always inside local storage_path)
-        $zipPath = storage_path("app/{$backupFolder}/{$fileName}");
-
-        // Make sure the folder actually exists
+    
+        // Use timestamp to make unique filename
+        $timestamp = now()->format('Y_m_d_H_i_s');
+        $fileName  = $baseName . '_' . $timestamp . '.zip';
+        $zipPath   = storage_path("app/{$backupFolder}/{$fileName}");
+    
+        // Make sure folder exists
         $dirPath = dirname($zipPath);
-        if (!is_dir($dirPath)) {
-            mkdir($dirPath, 0755, true);
-        }
-
+        if (!is_dir($dirPath)) mkdir($dirPath, 0755, true);
+    
         $zip = new ZipArchive();
-        $openResult = $zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
-
+        $openResult = $zip->open($zipPath, ZipArchive::CREATE);
+    
         if ($openResult === true) {
             $files = new \RecursiveIteratorIterator(
                 new \RecursiveDirectoryIterator($sourceDir, \FilesystemIterator::SKIP_DOTS),
                 \RecursiveIteratorIterator::LEAVES_ONLY
             );
-
+    
             foreach ($files as $file) {
                 if ($file->isFile()) {
                     $filePath     = $file->getRealPath();
@@ -61,29 +61,38 @@ class BackupProjectJob implements ShouldQueue
                     $zip->addFile($filePath, $relativePath);
                 }
             }
-
+    
             $zip->close();
-
+    
+            // Save in created_backups
+            $createdBackup = $this->backup->createdBackups()->create([
+                'file_name' => pathinfo($fileName, PATHINFO_FILENAME),
+                'size'      => filesize($zipPath),
+            ]);
+    
+            // Update main backup status
             $this->backup->update([
                 'status' => 'success',
                 'size'   => filesize($zipPath),
             ]);
-
+    
             Mail::to($this->backup->project->user->email ?? 'user@example.com')
-            ->send(new BackupStatusMail($this->backup));
+                ->send(new BackupStatusMail($this->backup, $createdBackup));
+    
         } else {
             Log::error('ZipArchive failed to open', [
                 'zipPath' => $zipPath,
                 'code'    => $openResult,
             ]);
-
-            Mail::to($this->backup->project->user->email ?? 'user@example.com')
-            ->send(new BackupStatusMail($this->backup));
-
+    
             $this->backup->update([
                 'status'        => 'failed',
                 'error_message' => 'Unable to create zip file',
             ]);
+    
+            Mail::to($this->backup->project->user->email ?? 'user@example.com')
+                ->send(new BackupStatusMail($this->backup));
         }
     }
+       
 }
