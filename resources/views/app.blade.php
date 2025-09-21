@@ -6,6 +6,7 @@
     <link rel="shortcut icon" type="image/png" href="/assets/images/logos/favicon.png" />
     <link rel="stylesheet" href="/assets/css/styles.min.css" />
     @vite('resources/js/app.js')
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @inertiaHead
 </head>
 <body>
