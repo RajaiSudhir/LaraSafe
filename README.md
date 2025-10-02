@@ -1,61 +1,147 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Laravel Backup Manager 🚀
 
 <p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
+    <img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="300" alt="Laravel Logo">
 </p>
 
-## About Laravel
+<p align="center">
+    <a href="https://github.com/yourusername/laravel-backup-manager/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
+    <a href="https://packagist.org/packages/yourusername/laravel-backup-manager"><img src="https://img.shields.io/packagist/v/yourusername/laravel-backup-manager" alt="Latest Version"></a>
+    <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/packagist/l/yourusername/laravel-backup-manager" alt="License"></a>
+</p>
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+A powerful and flexible backup management solution built with Laravel, Inertia, and Vue. Effortlessly manage, schedule, and monitor backups for your projects with a sleek, modern interface.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## ✨ Quick Start
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Follow these steps to set up and run the Laravel Backup Manager:
 
-## Learning Laravel
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/RajaiSudhir/LaravelBackupsManager
+   cd laravel-backup-manager
+   ```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+2. **Install Dependencies**
+   ```bash
+   composer install
+   npm install && npm run build
+   ```
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+3. **Configure Environment**
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+4. **Set Up Database and Queue**
+   - Edit `.env` to configure `DB_*` settings and set `QUEUE_CONNECTION=database`.
 
-## Laravel Sponsors
+5. **Run Migrations and Seeders**
+   ```bash
+   php artisan migrate --seed
+   ```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+6. **Serve the Application**
+   ```bash
+   php artisan serve
+   ```
 
-### Premium Partners
+7. **Get Started**
+   - Log in with the default seeded user.
+   - Create projects under **Manage Projects**.
+   - Configure backups for each project.
+   - Monitor stats, schedules, and downloads via the **Dashboard**.
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## 🔥 Highlights
 
-## Contributing
+- **Fully Native**: Built using Laravel core, Inertia, and Vue.
+- **Private Storage**: Backups stored securely in `storage/app/private/backups/{project}`.
+- **Scheduling**: Supports daily, weekly, or monthly backups at custom times.
+- **Integrity Checks**: Uses SHA-256 checksums and auto-expiry cleanup.
+- **Interactive Dashboard**: Real-time stats, trends, timelines, and quick actions.
+- **Production-Ready**: Includes migrations and seeders for seamless setup.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## 📚 Core Features
 
-## Code of Conduct
+| **Category**         | **Details**                                                                 |
+|----------------------|-----------------------------------------------------------------------------|
+| **Projects**         | Define multiple projects with custom file paths.                            |
+| **Backups**          | Configure backup frequency, timing, and retry pending backups.              |
+| **Storage**          | Secure, non-public disk with organized folder structure.                    |
+| **Metadata**         | Tracks file size, checksum, and expiry date for each backup.                |
+| **Jobs/Queues**      | Asynchronous ZIP creation via `BackupProjectJob`.                           |
+| **Dashboard**        | Inertia + Vue interface with stats cards, tables, timeline, charts, and loaders. |
+| **Analytics**        | Charts for storage usage, success/failure trends, and upcoming schedules.   |
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## 🎯 Dashboard Overview
 
-## Security Vulnerabilities
+### Stats Cards
+- Total Projects
+- Total Backups & Today’s Count
+- Storage Used & This Week’s Count
+- Success Rate & Successful Backups Count
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Upcoming Backups
+- Timeline of the next 7 days' scheduled backups with countdown timers.
 
-## License
+### Recent Backups
+- Displays the latest 10 backup operations with download links and status badges.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### Project Statistics
+- Top 5 projects by backup count and total size, including last backup timestamp.
+
+### Storage Usage
+- Bar chart showing storage consumption per project.
+
+### Quick Actions
+- Create New Backup
+- Manage Backups
+- Manage Projects
+- Settings
+
+## 🔧 Configuration
+
+### Filesystem (`config/filesystems.php`)
+```php
+'disks' => [
+    'private' => [
+        'driver' => 'local',
+        'root'   => storage_path('app/private'),
+    ],
+],
+```
+
+### Queue (`.env`)
+```text
+QUEUE_CONNECTION=database
+```
+
+### Scheduler (`app/Console/Kernel.php`)
+```php
+$schedule->job(new BackupProjectJob)->daily();
+```
+
+## 🚧 Roadmap
+
+- 🔐 Enhanced authentication and profile management.
+- 🤖 Notifications via Telegram, Slack, and Email.
+- 💾 Full backups combining files and SQL dumps in one archive.
+- ⚡ Incremental snapshots and image-based backups.
+- 🔄 Web UI for file and database restoration.
+
+Contributions are welcome! See the **Contributing** section below.
+
+## 🤝 Contributing
+
+1. Fork and clone the repository.
+2. Create a feature branch.
+3. Commit and push your changes.
+4. Open a Pull Request.
+
+Please adhere to our [Code of Conduct](link-to-code-of-conduct).
+
+## 📄 License
+
+Released under the [MIT License](https://opensource.org/licenses/MIT).  
+Feel free to use, modify, and distribute!
