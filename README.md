@@ -1,7 +1,7 @@
 # Laravel Backup Manager 🚀
 
 <p align="center">
-    <img src="https://raw.githubusercontent.com/RajaiSudhir/LaraSafe/public/assets/images/logos/larasafe.png" width="300" alt="LaraSafe Logo">
+    <img src="https://raw.githubusercontent.com/RajaiSudhir/LaraSafe/main/public/assets/images/logos/larasafe.png" width="300" alt="LaraSafe Logo">
 </p>
 
 <p align="center">
