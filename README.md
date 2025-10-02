@@ -1,7 +1,7 @@
 # Laravel Backup Manager 🚀
 
 <p align="center">
-    <img src="https://raw.githubusercontent.com/RajaiSudhir/LaraSafe/main/assets/logo.png" width="300" alt="LaraSafe Logo">
+    <img src="https://raw.githubusercontent.com/RajaiSudhir/LaraSafe/public/assets/images/logos/larasafe.png" width="300" alt="LaraSafe Logo">
 </p>
 
 <p align="center">
@@ -10,7 +10,7 @@
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/packagist/l/RajaiSudhir/LaraSafe" alt="License"></a>
 </p>
 
-A powerful and flexible backup management solution built with Laravel, Inertia, and Vue. Effortlessly manage, schedule, and monitor backups for your projects with a sleek, gitmodern interface.
+A powerful and flexible backup management solution built with Laravel, Inertia, and Vue. Effortlessly manage, schedule, and monitor backups for your projects with a sleek, modern interface.
 
 ## ✨ Quick Start
 
