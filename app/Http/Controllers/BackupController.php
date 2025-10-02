@@ -12,6 +12,7 @@ use App\Mail\BackupStatusMail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
+use App\Models\CreatedBackup;
 
 class BackupController extends Controller
 {
@@ -48,13 +49,12 @@ class BackupController extends Controller
 
         $nextBackup = null;
         if ($request->frequency) {
-            // combine today with selected time (default: now)
             $time = $request->time ?: now()->format('H:i');
             $todayWithTime = Carbon::parse($time);
-    
+
             $nextBackup = match ($request->frequency) {
-                'daily'   => $todayWithTime->copy()->addDay(),
-                'weekly'  => $todayWithTime->copy()->addWeek(),
+                'daily' => $todayWithTime->copy()->addDay(),
+                'weekly' => $todayWithTime->copy()->addWeek(),
                 'monthly' => $todayWithTime->copy()->addMonth(),
             };
         }
@@ -66,7 +66,7 @@ class BackupController extends Controller
             'status' => 'pending',
             'frequency' => $request->frequency,
             'time' => $request->time,
-            'next_backup_at'   => $nextBackup,
+            'next_backup_at' => $nextBackup,
         ]);
 
         BackupProjectJob::dispatch($backup);
@@ -86,56 +86,88 @@ class BackupController extends Controller
     public function retryBackup($id)
     {
         $backup = Backup::findOrFail($id);
-        if ($backup->status === 'completed') {
-            return back()->with('error', 'Cannot retry a completed backup.');
-        }
+        $backup->update(['status' => 'pending']);
 
         BackupProjectJob::dispatch($backup);
-
-        Mail::to($backup->project->user->email ?? 'user@example.com')
-            ->send(new BackupStatusMail($backup));
 
         return back()->with('status', 'Backup retry initiated successfully.');
     }
 
+    /**
+     * Download a specific backup file
+     */
     public function download($id)
     {
-        $backup = Backup::with('project')->findOrFail($id);
-        logger($backup);
-        // Make sure to include the .zip extension
-        $filePath = storage_path("app/backups/{$backup->project->file_name}/{$backup->file_name}.zip");
-        logger($filePath);
-        if (!file_exists($filePath)) {
-            return redirect()->back()->with('error', 'Backup file not found.');
-        }
+        try {
+            $createdBackup = CreatedBackup::with('backup.project')->findOrFail($id);
 
-        return response()->download($filePath, $backup->file_name . '.zip');
+            // Use the file_path stored in the database
+            $filePath = storage_path("app/{$createdBackup->file_path}");
+
+            // Enhanced file existence check
+            if (!file_exists($filePath)) {
+                \Log::error("Backup file not found", [
+                    'backup_id' => $id,
+                    'expected_path' => $filePath,
+                    'stored_path' => $createdBackup->file_path
+                ]);
+
+                return redirect()->back()->with('error', 'Backup file not found on server.');
+            }
+
+            // Optional: Verify file integrity if checksum exists
+            if ($createdBackup->checksum) {
+                $currentChecksum = hash_file('sha256', $filePath);
+                if ($currentChecksum !== $createdBackup->checksum) {
+                    \Log::warning("Backup file integrity check failed", [
+                        'backup_id' => $id,
+                        'expected_checksum' => $createdBackup->checksum,
+                        'actual_checksum' => $currentChecksum
+                    ]);
+
+                    return redirect()->back()->with('error', 'Backup file may be corrupted. Please contact administrator.');
+                }
+            }
+
+            // Create a user-friendly download name with timestamp
+            $timestamp = $createdBackup->created_at->format('Y-m-d_H-i-s');
+            $downloadName = "{$createdBackup->backup->project->name}_{$timestamp}.zip";
+
+            // Log successful download for audit
+            \Log::info("Backup downloaded", [
+                'backup_id' => $id,
+                'project' => $createdBackup->backup->project->name,
+                'file_size' => $createdBackup->size,
+                'download_name' => $downloadName
+            ]);
+
+            return response()->download($filePath, $downloadName);
+        } catch (\Exception $e) {
+            \Log::error("Download failed", [
+                'backup_id' => $id,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->back()->with('error', 'Failed to download backup. Please try again.');
+        }
     }
 
     public function destroy($id)
     {
-        $backup = Backup::with('project')->find($id);
+        $createdBackup = CreatedBackup::with('backup.project')->findOrFail($id);
 
-        if (!$backup) {
-            return redirect()
-                ->route('manage-backups')
-                ->with('error', 'Backup not found');
+        $disk = $createdBackup->storage_disk ?? 'local';
+        if (Storage::disk($disk)->exists($createdBackup->file_path)) {
+            Storage::disk($disk)->delete($createdBackup->file_path);
         }
 
-        // Use the correct folder and file name from DB
-        $disk = $backup->storage_disk ?? 'local';
-        $zipPath = "backups/{$backup->project->file_name}/{$backup->file_name}.zip";
-
-        if (Storage::disk($disk)->exists($zipPath)) {
-            Storage::disk($disk)->delete($zipPath);
-        }
-
-        $backup->delete();
+        // Delete the database record
+        $createdBackup->delete();
 
         return redirect()
             ->route('manage-backups')
             ->with('success', 'Backup deleted successfully');
-    }    
+    }
 
     public function edit($id)
     {
@@ -161,33 +193,70 @@ class BackupController extends Controller
 
         $nextBackup = null;
         if ($request->frequency) {
-            // combine today with selected time (default: now)
             $time = $request->time ?: now()->format('H:i');
             $todayWithTime = Carbon::parse($time);
-    
+
             $nextBackup = match ($request->frequency) {
-                'daily'   => $todayWithTime->copy()->addDay(),
-                'weekly'  => $todayWithTime->copy()->addWeek(),
+                'daily' => $todayWithTime->copy()->addDay(),
+                'weekly' => $todayWithTime->copy()->addWeek(),
                 'monthly' => $todayWithTime->copy()->addMonth(),
             };
         }
-        
+
         $backup->update([
             'project_id' => $validated['project_id'],
             'file_name' => $validated['file_name'],
             'storage_disk' => $validated['storage_disk'],
             'backup_frequency' => $validated['frequency'],
             'backup_time' => $validated['time'],
-            'next_backup_at'   => $nextBackup,
+            'next_backup_at' => $nextBackup,
         ]);
 
         BackupProjectJob::dispatch($backup);
 
         Mail::to($backup->project->user->email ?? 'user@example.com')
-        ->send(new BackupStatusMail($backup));
+            ->send(new BackupStatusMail($backup));
 
         return redirect()
-        ->route('manage-backups')
-        ->with('success', 'Backup updated successfully');
+            ->route('manage-backups')
+            ->with('success', 'Backup updated successfully');
+    }
+
+    /**
+     * View all backups for a specific backup configuration
+     */
+    public function viewBackups($id)
+    {
+        $backups = CreatedBackup::with('backup.project')
+            ->where('backup_id', $id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return Inertia::render('Backups/View-Backups', [
+            'backups' => $backups,
+        ]);
+    }
+
+    /**
+     * Clean up expired backups
+     */
+    public function cleanupExpiredBackups()
+    {
+        $expiredBackups = CreatedBackup::where('expires_at', '<', now())->get();
+
+        foreach ($expiredBackups as $backup) {
+            // Delete physical file
+            $disk = $backup->storage_disk ?? 'local';
+            if (Storage::disk($disk)->exists($backup->file_path)) {
+                Storage::disk($disk)->delete($backup->file_path);
+            }
+
+            // Delete database record
+            $backup->delete();
+        }
+
+        return response()->json([
+            'message' => "Cleaned up {$expiredBackups->count()} expired backups"
+        ]);
     }
 }

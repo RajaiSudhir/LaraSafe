@@ -18,16 +18,16 @@ defineProps({
 })
 
 const deleting = ref(null)
-const retrying = ref(null)
+const downloading = ref(null)
 
 // Computed property to check if any operation is in progress
 const isLoading = computed(() => {
-    return deleting.value !== null || retrying.value !== null
+    return deleting.value !== null || downloading.value !== null
 })
 
 const handleDelete = (backupId) => {
     Swal.fire({
-        title: 'Are you sure you want to delete all the backups of this project?',
+        title: 'Are you sure you want to delete this backup?',
         text: 'This action cannot be undone!',
         icon: 'warning',
         showCancelButton: true,
@@ -39,12 +39,12 @@ const handleDelete = (backupId) => {
         if (result.isConfirmed) {
             deleting.value = backupId
             router.delete(`/backups/delete-backup/${backupId}`, {
-                preserveScroll: true,
                 onSuccess: () => {
                     Swal.fire('Deleted!', 'Backup has been deleted.', 'success')
                     deleting.value = null
                 },
-                onError: () => {
+                onError: (errors) => {
+                    console.error('Delete error:', errors)
                     Swal.fire('Error!', 'Failed to delete the backup.', 'error')
                     deleting.value = null
                 },
@@ -53,36 +53,40 @@ const handleDelete = (backupId) => {
     })
 }
 
-const handleRetry = (backupId) => {
-    Swal.fire({
-        title: 'Are you sure you want to create new backup?',
-        text: 'This will reprocess the backup job.',
-        icon: 'info',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, create it!',
-        cancelButtonText: 'Cancel',
-    }).then((result) => {
-        if (result.isConfirmed) {
-            retrying.value = backupId
-            router.post(`/backups/retry-backup/${backupId}`, {}, {
-                preserveScroll: true,
-                onSuccess: () => {
-                    Swal.fire('Creating Backup!', 'Creating backup has been initiated.', 'success')
-                    retrying.value = null
-                },
-                onError: () => {
-                    Swal.fire('Error!', 'Failed to create backup.', 'error')
-                    retrying.value = null
-                },
-            })
-        }
-    })
+const handleDownload = (backupId) => {
+    downloading.value = backupId
+    
+    // Create a temporary link for download
+    const downloadUrl = `/backups/download/${backupId}`
+    const link = document.createElement('a')
+    link.href = downloadUrl
+    link.style.display = 'none'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    
+    // Reset loading state after a short delay
+    setTimeout(() => {
+        downloading.value = null
+    }, 2000)
 }
 
-const handleView = (backupId) => {
-    router.get(`/backups/view-backup/${backupId}`, {
+// Alternative download method using router (if you prefer)
+const handleDownloadWithRouter = (backupId) => {
+    downloading.value = backupId
+    router.get(`/backups/download/${backupId}`, {}, {
+        onSuccess: () => {
+            downloading.value = null
+        },
+        onError: (errors) => {
+            console.error('Download error:', errors)
+            Swal.fire('Error!', 'Failed to download the backup.', 'error')
+            downloading.value = null
+        },
+        onFinish: () => {
+            // Always reset loading state
+            downloading.value = null
+        }
     })
 }
 
@@ -109,12 +113,12 @@ const formatDate = (dateStr) => {
     })
 }
 
-// Method to get loading message based on current operation
-const getLoadingMessage = () => {
-    if (deleting.value) return 'Deleting backup...'
-    if (retrying.value) return 'Creating new backup...'
-    if (downloading.value) return 'Preparing download...'
-    return 'Processing...'
+// Method to get file status indicator
+const getFileStatus = (backup) => {
+    if (backup.expires_at && new Date(backup.expires_at) < new Date()) {
+        return { status: 'expired', color: 'danger', text: 'Expired' }
+    }
+    return { status: 'active', color: 'success', text: 'Active' }
 }
 </script>
 
@@ -125,7 +129,9 @@ const getLoadingMessage = () => {
             <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
-            <p class="mt-3 mb-0 text-center">{{ getLoadingMessage() }}</p>
+            <p class="mt-3 mb-0 text-center">
+                {{ deleting ? 'Deleting backup...' : 'Preparing download...' }}
+            </p>
         </div>
     </div>
 
@@ -134,58 +140,78 @@ const getLoadingMessage = () => {
             <div class="card w-100">
                 <div class="card-body p-4">
                     <div class="d-flex mb-4 justify-content-between align-items-center">
-                        <h5 class="mb-0 fw-bold">Backups List</h5>
-                        <Link href="/backups/create-backup" class="btn btn-primary">Create New Backup</Link>
+                        <h5 class="mb-0 fw-bold">Individual Backups</h5>
+                        <Link href="/backups/manage-backups" class="btn btn-secondary">Back to Main Backups</Link>
                     </div>
+                    
+                    <!-- Summary Stats -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">Total Backups</h6>
+                                    <h4 class="text-primary">{{ backups.length }}</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">Total Size</h6>
+                                    <h4 class="text-info">
+                                        {{ formatSize(backups.reduce((sum, backup) => sum + (backup.size || 0), 0)) }}
+                                    </h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="table-responsive">
                         <table class="table table-bordered table-striped align-middle">
                             <thead>
                                 <tr>
-                                    <th scope="col">ID</th>
-                                    <th scope="col">Project Name</th>
+                                    <th scope="col">Backup File Name</th>
                                     <th scope="col">Size</th>
-                                    <th scope="col">Status</th>
                                     <th scope="col">Created At</th>
+                                    <th scope="col">Status</th>
                                     <th scope="col">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr v-if="!backups.length">
-                                    <td colspan="8" class="text-center">No backups found.</td>
+                                    <td colspan="5" class="text-center py-4">
+                                        <i class="ti ti-folder-x fs-2 text-muted"></i>
+                                        <p class="text-muted mb-0">No backups found.</p>
+                                    </td>
                                 </tr>
                                 <tr v-for="backup in backups" :key="backup.id">
-                                    <td>{{ backup.id }}</td>
-                                    <td>{{ backup.project.name }}</td>
+                                    <td>
+                                        <div>
+                                            <strong>{{ backup.file_name }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ backup.backup?.project?.name || 'Unknown Project' }}</small>
+                                        </div>
+                                    </td>
                                     <td>{{ formatSize(backup.size) }}</td>
-                                    <td>{{ backup.status || 'N/A' }}</td>
                                     <td>{{ formatDate(backup.created_at) }}</td>
+                                    <td>
+                                        <span 
+                                            :class="`badge bg-${getFileStatus(backup).color}`"
+                                        >
+                                            {{ getFileStatus(backup).text }}
+                                        </span>
+                                    </td>
                                     <td>
                                         <div class="d-flex">
                                             <button
-                                                @click="handleRetry(backup.id)"
-                                                class="btn btn-sm btn-light-warning text-warning me-1"
-                                                :disabled="retrying === backup.id || isLoading"
-                                                title="Create New Backup"
+                                                @click="handleDownload(backup.id)"
+                                                class="btn btn-sm btn-light-success text-success me-1"
+                                                :disabled="downloading === backup.id || isLoading"
+                                                title="Download"
                                             >
-                                                <i class="ti ti-refresh" v-if="retrying !== backup.id"></i>
+                                                <i class="ti ti-download" v-if="downloading !== backup.id"></i>
                                                 <span v-else class="spinner-border spinner-border-sm" role="status"></span>
                                             </button>
-                                            <button
-                                                @click="handleView(backup.id)"
-                                                class="btn btn-sm btn-light-warning text-warning me-1"
-                                                :disabled="isLoading"
-                                                title="View all Backups"
-                                            >
-                                                <i class="ti ti-eye"></i>
-                                            </button>
-                                            <Link 
-                                                :href="`/backups/edit-backup/${backup.id}`" 
-                                                class="btn btn-sm btn-light-info text-info me-1" 
-                                                title="Edit"
-                                                :class="{ 'disabled': isLoading }"
-                                            >
-                                                <i class="ti ti-edit"></i>
-                                            </Link>
                                             <button
                                                 @click.prevent="handleDelete(backup.id)"
                                                 class="btn btn-sm btn-light-danger text-danger"
@@ -227,16 +253,11 @@ const getLoadingMessage = () => {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: white;
+    background: rgba(255, 255, 255, 0.85);
     padding: 2rem;
     border-radius: 10px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
     border: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.loader-content .spinner-border {
-    width: 3rem;
-    height: 3rem;
 }
 
 .loader-content p {
@@ -249,12 +270,6 @@ const getLoadingMessage = () => {
 /* Ensure buttons are properly disabled during loading */
 .btn:disabled {
     opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.disabled {
-    opacity: 0.6;
-    pointer-events: none;
     cursor: not-allowed;
 }
 </style>

@@ -28,8 +28,8 @@
             </ul>
             <div class="navbar-collapse justify-content-end px-0" id="navbarNav">
                 <ul class="navbar-nav flex-row ms-auto align-items-center justify-content-end">
-                    <a href="https://www.wrappixel.com/templates/spike-bootstrap-admin-dashboard/?ref=376#demos"
-                        target="_blank" class="btn btn-primary">Check Pro Template</a>
+                    <a href="https://github.com/RajaiSudhir/LaravelBackupsManager"
+                        target="_blank" class="btn btn-primary">Check Github Repo</a>
                     <li class="nav-item dropdown">
                         <a class="nav-link " href="javascript:void(0)" id="drop2" data-bs-toggle="dropdown"
                             aria-expanded="false">

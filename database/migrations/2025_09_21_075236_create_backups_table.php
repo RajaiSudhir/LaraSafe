@@ -6,25 +6,27 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('backups', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('project_id')->constrained()->cascadeOnDelete();
+            $table->uuid('id')->primary(); // UUID primary key
+            $table->uuid('project_id'); // UUID foreign key
             $table->string('file_name');
             $table->string('storage_disk');
             $table->bigInteger('size')->nullable();
             $table->enum('status', ['pending', 'success', 'failed'])->default('pending');
             $table->timestamps();
+            
+            // Foreign key constraint
+            $table->foreign('project_id')->references('id')->on('projects')->onDelete('cascade');
+            
+            // Add indexes for better performance
+            $table->index('project_id');
+            $table->index('status');
+            $table->index('created_at');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('backups');

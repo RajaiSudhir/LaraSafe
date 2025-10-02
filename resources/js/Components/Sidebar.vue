@@ -54,18 +54,6 @@ import { Link } from '@inertiajs/vue3'
                             </div>
                         </Link>
                     </li>
-                    <li class="sidebar-item">
-                        <Link class="sidebar-link primary-hover-bg justify-content-between has-arrow"
-                            href="javascript:void(0)" aria-expanded="false">
-                            <div class="d-flex align-items-center gap-6">
-                                <span class="d-flex">
-                                    <iconify-icon icon="solar:home-angle-line-duotone"></iconify-icon>
-                                </span>
-                                <span class="hide-menu">Front Pages</span>
-                            </div>
-
-                        </Link>
-                    </li>
                 </ul>
             </nav>
             <!-- End Sidebar navigation -->

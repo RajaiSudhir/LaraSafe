@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('backups:dispatch-due')->everyMinute();
+Schedule::command('app:cleanup-expired-backups')->everyMinute();

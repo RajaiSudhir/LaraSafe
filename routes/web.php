@@ -22,11 +22,11 @@ Route::prefix('/projects')->group(function () {
 Route::prefix('/backups')->group(function () {
     Route::get('/manage-backups', [BackupController::class, 'index'])->name('manage-backups');
     Route::get('/create-backup', [BackupController::class, 'createBackup'])->name('create-backup');
+    Route::get('/view-backup/{id}', [BackupController::class, 'viewBackups'])->name('view-backup');
     Route::post('/store-backup', [BackupController::class, 'storeBackup'])->name('store-backup');
     Route::post('/retry-backup/{id}', [BackupController::class, 'retryBackup'])->name('retry-backup');
     Route::delete('/delete-backup/{id}', [BackupController::class, 'destroy'])->name('backups.destroy');
     Route::get('/download/{id}', [BackupController::class, 'download'])->name('download.backup');
-    Route::get('/edit-backup/{id}', [BackupController::class, 'edit'])->name('edit-backup');
     Route::get('/edit-backup/{id}', [BackupController::class, 'edit'])->name('backups.edit');
     Route::put('/update-backup/{id}', [BackupController::class, 'updateBackup'])->name('backups.update');
 });
