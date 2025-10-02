@@ -1,25 +1,25 @@
 # Laravel Backup Manager 🚀
 
 <p align="center">
-    <img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="300" alt="Laravel Logo">
+    <img src="https://raw.githubusercontent.com/RajaiSudhir/LaraSafe/main/assets/logo.png" width="300" alt="LaraSafe Logo">
 </p>
 
 <p align="center">
-    <a href="https://github.com/yourusername/laravel-backup-manager/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-    <a href="https://packagist.org/packages/yourusername/laravel-backup-manager"><img src="https://img.shields.io/packagist/v/yourusername/laravel-backup-manager" alt="Latest Version"></a>
-    <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/packagist/l/yourusername/laravel-backup-manager" alt="License"></a>
+    <a href="https://github.com/RajaiSudhir/LaraSafe/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
+    <a href="https://packagist.org/packages/RajaiSudhir/LaraSafe"><img src="https://img.shields.io/packagist/v/RajaiSudhir/LaraSafe" alt="Latest Version"></a>
+    <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/packagist/l/RajaiSudhir/LaraSafe" alt="License"></a>
 </p>
 
-A powerful and flexible backup management solution built with Laravel, Inertia, and Vue. Effortlessly manage, schedule, and monitor backups for your projects with a sleek, modern interface.
+A powerful and flexible backup management solution built with Laravel, Inertia, and Vue. Effortlessly manage, schedule, and monitor backups for your projects with a sleek, gitmodern interface.
 
 ## ✨ Quick Start
 
-Follow these steps to set up and run the Laravel Backup Manager:
+Follow these steps to set up and run the Laravel Backup Management System (LaraSafe):
 
 1. **Clone the Repository**
    ```bash
-   git clone https://github.com/RajaiSudhir/LaravelBackupsManager
-   cd laravel-backup-manager
+   git clone https://github.com/RajaiSudhir/LaraSafe.git
+   cd LaraSafe
    ```
 
 2. **Install Dependencies**
