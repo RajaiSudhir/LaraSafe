@@ -428,4 +428,8 @@ const getTimeUntil = (dateStr) => {
     min-width: 60px;
     font-size: 0.875rem;
 }
+
+.fs-1 {
+    font-size: 2rem !important;
+}
 </style>

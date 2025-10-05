@@ -382,44 +382,89 @@ class BackupController extends Controller
     public function updateBackup(Request $request, $id)
     {
         $backup = Backup::findOrFail($id);
-
-        $validated = $request->validate([
+    
+        $rules = [
             'project_id' => 'required|exists:projects,id',
             'file_name' => 'required|string|max:255',
             'storage_disk' => 'required|in:local,s3,other',
+            'include_database' => 'boolean',
             'frequency' => 'nullable|in:daily,weekly,monthly',
             'time' => 'nullable|date_format:H:i',
-        ]);
-
+        ];
+    
+        $includeDatabase = (bool) $request->input('include_database');
+    
+        if ($includeDatabase) {
+            $rules['db_source'] = 'required|in:env,custom,project_config';
+            if ($request->db_source === 'custom') {
+                $rules = array_merge($rules, [
+                    'db_host' => 'required|string',
+                    'db_port' => 'required|integer|between:1,65535',
+                    'db_name' => 'required|string',
+                    'db_username' => 'required|string',
+                    'db_password' => 'nullable|string',
+                ]);
+            }
+            $rules['db_tables'] = 'required|in:all,selected';
+            if ($request->db_tables === 'selected') {
+                $rules['selected_tables'] = 'required|string';
+            }
+        }
+    
+        $validated = $request->validate($rules);
+    
+        // Calculate next backup time if scheduling
         $nextBackup = null;
         if ($request->frequency) {
             $time = $request->time ?: now()->format('H:i');
             $todayWithTime = Carbon::parse($time);
-
             $nextBackup = match ($request->frequency) {
                 'daily' => $todayWithTime->copy()->addDay(),
                 'weekly' => $todayWithTime->copy()->addWeek(),
                 'monthly' => $todayWithTime->copy()->addMonth(),
             };
         }
-
+    
+        // Prepare database config payload
+        $dbConfig = null;
+        if ($includeDatabase) {
+            $dbConfig = [
+                'source' => $request->db_source,
+                'tables' => $request->db_tables,
+            ];
+            if ($request->db_source === 'custom') {
+                $dbConfig['credentials'] = encrypt([
+                    'host' => $request->db_host,
+                    'port' => $request->db_port,
+                    'database' => $request->db_name,
+                    'username' => $request->db_username,
+                    'password' => $request->db_password,
+                ]);
+            }
+            if ($request->db_tables === 'selected') {
+                $dbConfig['selected_tables'] = array_map('trim', explode(',', $request->selected_tables));
+            }
+        }
+    
         $backup->update([
             'project_id' => $validated['project_id'],
             'file_name' => $validated['file_name'],
             'storage_disk' => $validated['storage_disk'],
-            'backup_frequency' => $validated['frequency'],
-            'backup_time' => $validated['time'],
+            'frequency' => $validated['frequency'],
+            'time' => $validated['time'],
             'next_backup_at' => $nextBackup,
+            'include_database' => $includeDatabase,
+            'database_config' => $dbConfig,
         ]);
-
+    
         BackupProjectJob::dispatch($backup);
-
+    
         Mail::to($backup->project->user->email ?? 'user@example.com')
-            ->send(new BackupStatusMail($backup));
-
+            ->send(new \App\Mail\BackupStatusMail($backup));
+    
         return redirect()
             ->route('manage-backups')
-            ->with('success', 'Backup updated successfully');
+            ->with('status', 'Backup updated successfully');
     }
 
     /**

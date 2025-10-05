@@ -37,6 +37,30 @@ class ProjectsController extends Controller
         return redirect()->route('manage-projects')->with('success', 'Project created successfully');
     }
 
+    public function editProject($id)
+    {
+        $project = Project::findOrFail($id);
+        return Inertia::render('Projects/EditProject', [
+            'project' => $project,
+            'projects' => Project::all() // Included for consistency with other components
+        ]);
+    }
+
+    public function updateProject(Request $request, $id)
+    {
+        $project = Project::findOrFail($id);
+
+        $validation = $request->validate([
+            'name' => 'required',
+            'description' => 'nullable|string',
+            'path' => 'required|string',
+        ]);
+
+        $project->update($validation);
+
+        return redirect()->route('manage-projects')->with('success', 'Project updated successfully');
+    }
+
     public function destroyProject($id)
     {
         // Load project with all related backup data
@@ -80,7 +104,6 @@ class ProjectsController extends Controller
 
                         // Check if file exists and delete it
                         if ($createdBackup->file_path && Storage::disk($createdBackup->storage_disk)->exists($createdBackup->file_path)) {
-
                             if (Storage::disk($createdBackup->storage_disk)->delete($createdBackup->file_path)) {
                                 $deletedFilesCount++;
                                 \Log::info("✅ Successfully deleted backup file: {$createdBackup->file_name}", [
