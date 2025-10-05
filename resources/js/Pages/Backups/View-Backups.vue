@@ -38,20 +38,32 @@ const handleDelete = (backupId) => {
     }).then((result) => {
         if (result.isConfirmed) {
             deleting.value = backupId
-            router.delete(`/backups/delete-backup/${backupId}`, {
-                onSuccess: () => {
-                    Swal.fire('Deleted!', 'Backup has been deleted.', 'success')
+            
+            // Use the correct route for deleting created backups
+            router.delete(`/backups/delete-created-backup/${backupId}`, {
+                onSuccess: (page) => {
+                    // Check if the response contains a success message
+                    if (page.props.flash?.success) {
+                        Swal.fire('Deleted!', page.props.flash.success, 'success')
+                    } else {
+                        Swal.fire('Deleted!', 'Backup has been deleted.', 'success')
+                    }
                     deleting.value = null
                 },
                 onError: (errors) => {
                     console.error('Delete error:', errors)
-                    Swal.fire('Error!', 'Failed to delete the backup.', 'error')
+                    const errorMessage = errors.message || 'Failed to delete the backup.'
+                    Swal.fire('Error!', errorMessage, 'error')
                     deleting.value = null
                 },
+                onFinish: () => {
+                    deleting.value = null
+                }
             })
         }
     })
 }
+
 
 const handleDownload = (backupId) => {
     downloading.value = backupId

@@ -117,9 +117,9 @@ Follow these steps to set up and run the Laravel Backup Management System (LaraS
 QUEUE_CONNECTION=database
 ```
 
-### Scheduler (`app/Console/Kernel.php`)
+### Scheduler (`routes/console.php`)
 ```php
-$schedule->job(new BackupProjectJob)->daily();
+Schedule::command('backups:dispatch-due')->everyMinute();
 ```
 
 ## 🚧 Roadmap

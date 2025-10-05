@@ -16,12 +16,14 @@ class Backup extends Model
 
     protected $fillable = [
         'id', 'project_id', 'file_name', 'storage_disk', 'size', 'status', 
-        'backup_frequency', 'backup_time', 'last_backup_at', 'next_backup_at'
+        'backup_frequency', 'backup_time', 'last_backup_at', 'next_backup_at', 'include_database', 'database_config',
     ];
 
     protected $casts = [
         'last_backup_at' => 'datetime',
         'next_backup_at' => 'datetime',
+        'include_database' => 'boolean',
+        'database_config'  => 'array', 
     ];
 
     protected static function boot()

@@ -124,7 +124,7 @@ const getTimeUntil = (dateStr) => {
                     <h5 class="card-title mb-10 fw-semibold">Storage Used</h5>
                     <div class="row align-items-center">
                         <div class="col-8">
-                            <h4 class="fw-semibold mb-3">{{ formatBytes(stats.totalSize) }}</h4>
+                            <h4 class="fw-semibold mb-3">{{ formatBytes(stats.totalSize)  ?? 0}}</h4>
                             <div class="d-flex align-items-center mb-2">
                                 <span class="me-1 rounded-circle bg-light-warning round-20 d-flex align-items-center justify-content-center">
                                     <i class="ti ti-server text-warning"></i>
