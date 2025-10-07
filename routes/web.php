@@ -18,7 +18,8 @@ Route::prefix('/projects')->group(function () {
     Route::delete('/delete-project/{id}', [ProjectsController::class, 'destroyProject'])->name('delete-project');
     Route::get('/view-project/{id}', [ProjectsController::class, 'index'])->name('view-project');
     Route::get('/{id}/edit', [ProjectsController::class, 'editProject'])->name('edit-project');
-Route::put('/update-project/{id}', [ProjectsController::class, 'updateProject'])->name('update-project');
+    Route::put('/update-project/{id}', [ProjectsController::class, 'updateProject'])->name('update-project');
+    Route::post('/restore', [BackupController::class, 'restoreBackup'])->name('restore-backup');
 });
 
 Route::prefix('/backups')->group(function () {
