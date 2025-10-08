@@ -19,10 +19,15 @@ defineProps({
 
 const deleting = ref(null)
 const retrying = ref(null)
+const restoreLoading = ref(false)
+
+const showRestoreModal = ref(false)
+const modalCreatedBackups = ref([]) // Holds created backups for selected backup
+const selectedCreatedBackupId = ref(null)
 
 // Computed property to check if any operation is in progress
 const isLoading = computed(() => {
-    return deleting.value !== null || retrying.value !== null
+    return deleting.value !== null || retrying.value !== null || restoreLoading.value
 })
 
 const handleDelete = (backupId) => {
@@ -86,6 +91,45 @@ const handleView = (backupId) => {
     })
 }
 
+// Open restore modal and populate created backups directly
+const openRestoreModal = (backup) => {
+    modalCreatedBackups.value = backup.created_backups || []
+    selectedCreatedBackupId.value = null
+    showRestoreModal.value = true
+}
+
+// Handle restore backup submission
+const handleRestore = () => {
+    if (!selectedCreatedBackupId.value) {
+        Swal.fire('Select Backup', 'Please select a backup from the dropdown.', 'warning')
+        return
+    }
+
+    Swal.fire({
+        title: 'Are you sure to restore the selected backup?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Restore',
+        cancelButtonText: 'Cancel'
+    }).then(result => {
+        if (result.isConfirmed) {
+            restoreLoading.value = true
+            router.post('/backups/restore', { created_backup_id: selectedCreatedBackupId.value }, {
+                preserveScroll: true,
+                onSuccess: () => {
+                    Swal.fire('Restored!', 'Backup restored successfully.', 'success')
+                    showRestoreModal.value = false
+                    restoreLoading.value = false
+                },
+                onError: () => {
+                    Swal.fire('Error', 'Failed to restore backup.', 'error')
+                    restoreLoading.value = false
+                }
+            })
+        }
+    })
+}
+
 // Method to format size in MB or GB
 const formatSize = (bytes) => {
     if (!bytes && bytes !== 0) return 'N/A'
@@ -113,7 +157,7 @@ const formatDate = (dateStr) => {
 const getLoadingMessage = () => {
     if (deleting.value) return 'Deleting backup...'
     if (retrying.value) return 'Creating new backup...'
-    if (downloading.value) return 'Preparing download...'
+    if (restoreLoading.value) return 'Restoring backup...'
     return 'Processing...'
 }
 </script>
@@ -178,9 +222,9 @@ const getLoadingMessage = () => {
                                             >
                                                 <i class="ti ti-eye"></i>
                                             </button>
-                                            <Link 
-                                                :href="`/backups/edit-backup/${backup.id}`" 
-                                                class="btn btn-sm btn-light-info text-info me-1" 
+                                            <Link
+                                                :href="`/backups/edit-backup/${backup.id}`"
+                                                class="btn btn-sm btn-light-info text-info me-1"
                                                 title="Edit"
                                                 :class="{ 'disabled': isLoading }"
                                             >
@@ -188,12 +232,22 @@ const getLoadingMessage = () => {
                                             </Link>
                                             <button
                                                 @click.prevent="handleDelete(backup.id)"
-                                                class="btn btn-sm btn-light-danger text-danger"
+                                                class="btn btn-sm btn-light-danger text-danger me-1"
                                                 :disabled="deleting === backup.id || isLoading"
                                                 title="Delete"
                                             >
                                                 <i class="ti ti-trash" v-if="deleting !== backup.id"></i>
                                                 <span v-else class="spinner-border spinner-border-sm" role="status"></span>
+                                            </button>
+
+                                            <!-- New Restore Backup Button -->
+                                            <button
+                                                @click="openRestoreModal(backup)"
+                                                class="btn btn-sm btn-light-success text-success"
+                                                :disabled="isLoading"
+                                                title="Restore Backup"
+                                            >
+                                                <i class="ti ti-arrow-back-up"></i>
                                             </button>
                                         </div>
                                     </td>
@@ -201,6 +255,38 @@ const getLoadingMessage = () => {
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Restore Backup Modal -->
+    <div v-if="showRestoreModal" class="modal fade show d-block" tabindex="-1" aria-modal="true" role="dialog">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Restore Backup</h5>
+                    <button type="button" class="btn-close" @click="showRestoreModal = false"></button>
+                </div>
+
+                <div class="modal-body">
+                    <label for="createdBackupSelect" class="form-label">Select Backup to Restore:</label>
+                    <select
+                        id="createdBackupSelect"
+                        class="form-select"
+                        v-model="selectedCreatedBackupId"
+                        :disabled="restoreLoading"
+                    >
+                        <option value="" disabled>Select a backup</option>
+                        <option v-for="cb in modalCreatedBackups" :key="cb.id" :value="cb.id">
+                            {{ cb.file_name }} - {{ formatDate(cb.created_at) }}
+                        </option>
+                    </select>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @click="showRestoreModal = false" :disabled="restoreLoading">Cancel</button>
+                    <button class="btn btn-primary" @click="handleRestore" :disabled="restoreLoading">Restore</button>
                 </div>
             </div>
         </div>
@@ -256,5 +342,17 @@ const getLoadingMessage = () => {
     opacity: 0.6;
     pointer-events: none;
     cursor: not-allowed;
+}
+
+/* Modal overrides to display modal properly */
+.modal.fade.show.d-block {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Center modal vertically */
+.modal-dialog-centered {
+    display: flex;
+    align-items: center;
+    min-height: calc(100% - 1rem);
 }
 </style>

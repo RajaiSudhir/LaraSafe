@@ -18,7 +18,7 @@ Route::prefix('/projects')->group(function () {
     Route::delete('/delete-project/{id}', [ProjectsController::class, 'destroyProject'])->name('delete-project');
     Route::get('/view-project/{id}', [ProjectsController::class, 'index'])->name('view-project');
     Route::get('/{id}/edit', [ProjectsController::class, 'editProject'])->name('edit-project');
-Route::put('/update-project/{id}', [ProjectsController::class, 'updateProject'])->name('update-project');
+    Route::put('/update-project/{id}', [ProjectsController::class, 'updateProject'])->name('update-project');
 });
 
 Route::prefix('/backups')->group(function () {
@@ -33,5 +33,6 @@ Route::prefix('/backups')->group(function () {
     Route::put('/update-backup/{id}', [BackupController::class, 'updateBackup'])->name('backups.update');
     Route::delete('/delete-created-backup/{id}', [BackupController::class, 'destroySubBackup'])->name('backups.destroyCreatedBackup');
     Route::post('/test-db-connection', [BackupController::class, 'testDatabaseConnection'])->name('test-db-connection');
+    Route::post('/restore', [BackupController::class, 'restoreBackup'])->name('restore-backup');
 });
 

@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 use App\Models\CreatedBackup;
+use App\Jobs\RestoreBackupJob;
 
 class BackupController extends Controller
 {
@@ -25,7 +26,8 @@ class BackupController extends Controller
 
     public function index()
     {
-        $backups = Backup::with('project')->get();
+        $backups = Backup::with('project', 'createdBackups')->get();
+        logger($backups->toArray());
         return Inertia::render('Backups/Backups', [
             'backups' => $backups,
         ]);
@@ -221,29 +223,29 @@ class BackupController extends Controller
     public function destroy($id)
     {
         $backup = Backup::with(['createdBackups', 'project'])->find($id);
-        
+
         if (!$backup) {
             return redirect()->back()->with('error', 'Backup not found');
         }
-    
+
         try {
             \DB::beginTransaction();
-    
+
             $deletedFiles = 0;
             $failedFiles = 0;
             $freedSpace = 0;
             $backupName = $backup->file_name;
             $projectName = $backup->project->name;
-    
+
             // Delete all created backup files for this backup
             foreach ($backup->createdBackups as $createdBackup) {
                 try {
                     $freedSpace += $createdBackup->size ?? 0;
-    
+
                     // Try to delete the file
                     if ($createdBackup->file_path) {
                         $fullPath = storage_path("app/{$createdBackup->file_path}");
-                        
+
                         // Try Laravel Storage first
                         if (Storage::disk($createdBackup->storage_disk)->exists($createdBackup->file_path)) {
                             if (Storage::disk($createdBackup->storage_disk)->delete($createdBackup->file_path)) {
@@ -252,7 +254,7 @@ class BackupController extends Controller
                             } else {
                                 $failedFiles++;
                             }
-                        } 
+                        }
                         // Try direct file system deletion
                         elseif (file_exists($fullPath)) {
                             if (unlink($fullPath)) {
@@ -273,12 +275,12 @@ class BackupController extends Controller
                     ]);
                 }
             }
-    
+
             // Delete the backup record (this will cascade delete created_backups)
             $backup->delete();
-    
+
             \DB::commit();
-    
+
             // Prepare success message
             $message = "Backup '{$backupName}' for project '{$projectName}' deleted successfully.";
             if ($deletedFiles > 0) {
@@ -287,46 +289,45 @@ class BackupController extends Controller
             if ($failedFiles > 0) {
                 $message .= " Warning: {$failedFiles} files could not be deleted.";
             }
-    
+
             return redirect()->back()->with('success', $message);
-    
         } catch (\Exception $e) {
             \DB::rollBack();
-            
+
             \Log::error("Error deleting backup: {$backup->file_name}", [
                 'backup_id' => $backup->id,
                 'error' => $e->getMessage()
             ]);
-    
+
             return redirect()->back()->with('error', 'Failed to delete backup. Please try again.');
         }
     }
-    
+
     /**
      * Delete individual created backup file
      */
     public function destroyCreatedBackup($id)
     {
         $createdBackup = CreatedBackup::with('backup.project')->find($id);
-        
+
         if (!$createdBackup) {
             return redirect()->back()->with('error', 'Backup file not found');
         }
-    
+
         try {
             $fileName = $createdBackup->file_name;
             $size = $createdBackup->size ?? 0;
             $projectName = $createdBackup->backup->project->name;
-    
+
             // Delete the actual file
             $fileDeleted = false;
             if ($createdBackup->file_path) {
                 $fullPath = storage_path("app/{$createdBackup->file_path}");
-                
+
                 // Try Laravel Storage first
                 if (Storage::disk($createdBackup->storage_disk)->exists($createdBackup->file_path)) {
                     $fileDeleted = Storage::disk($createdBackup->storage_disk)->delete($createdBackup->file_path);
-                } 
+                }
                 // Try direct file system deletion
                 elseif (file_exists($fullPath)) {
                     $fileDeleted = unlink($fullPath);
@@ -334,10 +335,10 @@ class BackupController extends Controller
                     $fileDeleted = true; // File doesn't exist anyway
                 }
             }
-    
+
             // Delete the database record
             $createdBackup->delete();
-    
+
             $message = "Backup file '{$fileName}' deleted successfully";
             if ($size > 0) {
                 $message .= " (" . $this->formatBytes($size) . " freed)";
@@ -345,19 +346,18 @@ class BackupController extends Controller
             if (!$fileDeleted) {
                 $message .= ". Warning: Physical file could not be removed.";
             }
-    
+
             return redirect()->back()->with('success', $message);
-    
         } catch (\Exception $e) {
             \Log::error("Error deleting created backup", [
                 'created_backup_id' => $createdBackup->id,
                 'error' => $e->getMessage()
             ]);
-    
+
             return redirect()->back()->with('error', 'Failed to delete backup file.');
         }
     }
-    
+
     private function formatBytes($size, $precision = 2): string
     {
         if ($size === 0) return '0 B';
@@ -382,7 +382,7 @@ class BackupController extends Controller
     public function updateBackup(Request $request, $id)
     {
         $backup = Backup::findOrFail($id);
-    
+
         $rules = [
             'project_id' => 'required|exists:projects,id',
             'file_name' => 'required|string|max:255',
@@ -391,9 +391,9 @@ class BackupController extends Controller
             'frequency' => 'nullable|in:daily,weekly,monthly',
             'time' => 'nullable|date_format:H:i',
         ];
-    
+
         $includeDatabase = (bool) $request->input('include_database');
-    
+
         if ($includeDatabase) {
             $rules['db_source'] = 'required|in:env,custom,project_config';
             if ($request->db_source === 'custom') {
@@ -410,9 +410,9 @@ class BackupController extends Controller
                 $rules['selected_tables'] = 'required|string';
             }
         }
-    
+
         $validated = $request->validate($rules);
-    
+
         // Calculate next backup time if scheduling
         $nextBackup = null;
         if ($request->frequency) {
@@ -424,7 +424,7 @@ class BackupController extends Controller
                 'monthly' => $todayWithTime->copy()->addMonth(),
             };
         }
-    
+
         // Prepare database config payload
         $dbConfig = null;
         if ($includeDatabase) {
@@ -445,7 +445,7 @@ class BackupController extends Controller
                 $dbConfig['selected_tables'] = array_map('trim', explode(',', $request->selected_tables));
             }
         }
-    
+
         $backup->update([
             'project_id' => $validated['project_id'],
             'file_name' => $validated['file_name'],
@@ -456,12 +456,12 @@ class BackupController extends Controller
             'include_database' => $includeDatabase,
             'database_config' => $dbConfig,
         ]);
-    
+
         BackupProjectJob::dispatch($backup);
-    
+
         Mail::to($backup->project->user->email ?? 'user@example.com')
             ->send(new \App\Mail\BackupStatusMail($backup));
-    
+
         return redirect()
             ->route('manage-backups')
             ->with('status', 'Backup updated successfully');
@@ -508,19 +508,19 @@ class BackupController extends Controller
     public function destroySubBackup($id)
     {
         $createdBackup = CreatedBackup::with(['backup.project'])->findOrFail($id);
-        
+
         try {
             $fileName = $createdBackup->file_name;
             $size = $createdBackup->size ?? 0;
             $projectName = $createdBackup->backup->project->name ?? 'Unknown Project';
-    
+
             // Delete the actual file from storage
             $fileDeleted = false;
             $filePath = $createdBackup->file_path;
-    
+
             if ($filePath) {
                 $storageDisk = $createdBackup->storage_disk ?? 'local';
-                
+
                 // Try Laravel Storage first
                 if (Storage::disk($storageDisk)->exists($filePath)) {
                     $fileDeleted = Storage::disk($storageDisk)->delete($filePath);
@@ -528,7 +528,7 @@ class BackupController extends Controller
                         'file_path' => $filePath,
                         'storage_disk' => $storageDisk
                     ]);
-                } 
+                }
                 // Try direct file system deletion as fallback
                 else {
                     $fullPath = storage_path("app/{$filePath}");
@@ -546,10 +546,10 @@ class BackupController extends Controller
                     }
                 }
             }
-    
+
             // Delete the database record
             $createdBackup->delete();
-    
+
             // Prepare success message
             $message = "Backup '{$fileName}' deleted successfully";
             if ($size > 0) {
@@ -558,7 +558,7 @@ class BackupController extends Controller
             if (!$fileDeleted) {
                 $message .= ". Warning: Physical file could not be removed from storage.";
             }
-    
+
             // Check if this is an AJAX/JSON request (from Vue.js)
             if (request()->expectsJson()) {
                 return response()->json([
@@ -566,26 +566,39 @@ class BackupController extends Controller
                     'message' => $message
                 ]);
             }
-    
+
             return redirect()->back()->with('success', $message);
-    
         } catch (\Exception $e) {
             \Log::error("Error deleting created backup", [
                 'created_backup_id' => $id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-    
+
             $errorMessage = 'Failed to delete backup: ' . $e->getMessage();
-    
+
             if (request()->expectsJson()) {
                 return response()->json([
                     'success' => false,
                     'message' => $errorMessage
                 ], 500);
             }
-    
+
             return redirect()->back()->with('error', $errorMessage);
         }
+    }
+
+    public function restoreBackup(Request $request)
+    {
+        $request->validate([
+            'created_backup_id' => 'required|exists:created_backups,id',
+        ]);
+
+        $createdBackup = CreatedBackup::with('backup.project')->findOrFail($request->created_backup_id);
+
+        // Dispatch a job to restore the selected backup asynchronously
+        RestoreBackupJob::dispatch($createdBackup);
+
+        return back()->with('status', 'Backup restore initiated successfully.');
     }
 }
