@@ -14,7 +14,6 @@ use ZipArchive;
 use App\Mail\BackupStatusMail;
 use Illuminate\Support\Facades\Mail;
 use Exception;
-use Carbon\Carbon;
 
 class BackupProjectJob implements ShouldQueue
 {

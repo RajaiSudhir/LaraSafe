@@ -2,7 +2,6 @@
 import MainLayout from '@/Layouts/MainLayout.vue'
 import { Link, router } from '@inertiajs/vue3'
 import { ref, computed } from 'vue'
-import axios from 'axios' // Make sure axios is imported for API calls
 
 // Load SweetAlert2 from CDN
 const Swal = window.Swal
@@ -23,8 +22,7 @@ const retrying = ref(null)
 const restoreLoading = ref(false)
 
 const showRestoreModal = ref(false)
-const selectedBackupId = ref(null) // backup whose created backups are fetched
-const createdBackupsList = ref([])
+const modalCreatedBackups = ref([]) // Holds created backups for selected backup
 const selectedCreatedBackupId = ref(null)
 
 // Computed property to check if any operation is in progress
@@ -93,21 +91,11 @@ const handleView = (backupId) => {
     })
 }
 
-// Fetch created backups for selected backup ID and open modal
-const fetchCreatedBackups = async (backupId) => {
-    selectedBackupId.value = backupId
-    restoreLoading.value = true
-    try {
-        const response = await axios.get(`/backups/view-backup/${backupId}`)
-        // Assuming response.data contains { backups: [...] }
-        createdBackupsList.value = response.data.backups
-        selectedCreatedBackupId.value = null // Reset selection
-        showRestoreModal.value = true
-    } catch (error) {
-        Swal.fire('Error', 'Failed to fetch created backups', 'error')
-    } finally {
-        restoreLoading.value = false
-    }
+// Open restore modal and populate created backups directly
+const openRestoreModal = (backup) => {
+    modalCreatedBackups.value = backup.created_backups || []
+    selectedCreatedBackupId.value = null
+    showRestoreModal.value = true
 }
 
 // Handle restore backup submission
@@ -234,9 +222,9 @@ const getLoadingMessage = () => {
                                             >
                                                 <i class="ti ti-eye"></i>
                                             </button>
-                                            <Link 
-                                                :href="`/backups/edit-backup/${backup.id}`" 
-                                                class="btn btn-sm btn-light-info text-info me-1" 
+                                            <Link
+                                                :href="`/backups/edit-backup/${backup.id}`"
+                                                class="btn btn-sm btn-light-info text-info me-1"
                                                 title="Edit"
                                                 :class="{ 'disabled': isLoading }"
                                             >
@@ -254,7 +242,7 @@ const getLoadingMessage = () => {
 
                                             <!-- New Restore Backup Button -->
                                             <button
-                                                @click="fetchCreatedBackups(backup.id)"
+                                                @click="openRestoreModal(backup)"
                                                 class="btn btn-sm btn-light-success text-success"
                                                 :disabled="isLoading"
                                                 title="Restore Backup"
@@ -290,7 +278,7 @@ const getLoadingMessage = () => {
                         :disabled="restoreLoading"
                     >
                         <option value="" disabled>Select a backup</option>
-                        <option v-for="cb in createdBackupsList" :key="cb.id" :value="cb.id">
+                        <option v-for="cb in modalCreatedBackups" :key="cb.id" :value="cb.id">
                             {{ cb.file_name }} - {{ formatDate(cb.created_at) }}
                         </option>
                     </select>

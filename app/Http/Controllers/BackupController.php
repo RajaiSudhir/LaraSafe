@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 use App\Models\CreatedBackup;
+use App\Jobs\RestoreBackupJob;
 
 class BackupController extends Controller
 {
@@ -25,7 +26,8 @@ class BackupController extends Controller
 
     public function index()
     {
-        $backups = Backup::with('project')->get();
+        $backups = Backup::with('project', 'createdBackups')->get();
+        logger($backups->toArray());
         return Inertia::render('Backups/Backups', [
             'backups' => $backups,
         ]);
