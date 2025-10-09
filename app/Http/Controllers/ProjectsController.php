@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Backup;
 use App\Models\Project;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -294,4 +295,35 @@ class ProjectsController extends Controller
         }
         return round($size, $precision) . ' ' . $units[$i];
     }
+
+    public function viewProject($id)
+    {
+        $project = Project::findOrFail($id);
+    
+        // Get backups belonging to this project
+        $backups = Backup::where('project_id', $project->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+    
+        // Group backups by date
+        $backupsByDate = $backups->groupBy(function ($backup) {
+            return $backup->created_at->format('Y-m-d');
+        });
+    
+        // Prepare chart data
+        $chartData = [
+            'labels' => $backupsByDate->keys(),
+            'counts' => $backupsByDate->map->count()->values(),
+            'sizes'  => $backupsByDate->map(function ($group) {
+                return $group->sum('size');
+            })->values(),
+        ];
+    
+        return Inertia::render('Projects/ViewProject', [
+            'project' => $project,
+            'backups' => $backups,
+            'chartData' => $chartData
+        ]);
+    }
+    
 }
