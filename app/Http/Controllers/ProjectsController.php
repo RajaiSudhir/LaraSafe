@@ -9,6 +9,7 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use App\Models\CreatedBackup;
 
 class ProjectsController extends Controller
 {
@@ -298,32 +299,27 @@ class ProjectsController extends Controller
 
     public function viewProject($id)
     {
-        $project = Project::findOrFail($id);
+        $project = Project::with([
+            'backups' => function($query) {
+                $query->with('createdBackups')
+                      ->orderBy('created_at', 'desc');
+            }
+        ])->findOrFail($id);
     
-        // Get backups belonging to this project
-        $backups = Backup::where('project_id', $project->id)
-            ->orderBy('created_at', 'desc')
-            ->get();
-    
-        // Group backups by date
-        $backupsByDate = $backups->groupBy(function ($backup) {
-            return $backup->created_at->format('Y-m-d');
-        });
-    
-        // Prepare chart data
-        $chartData = [
-            'labels' => $backupsByDate->keys(),
-            'counts' => $backupsByDate->map->count()->values(),
-            'sizes'  => $backupsByDate->map(function ($group) {
-                return $group->sum('size');
-            })->values(),
-        ];
+        // Get all created backup files for this project
+        $createdBackups = CreatedBackup::whereHas('backup', function($query) use ($id) {
+            $query->where('project_id', $id);
+        })
+        ->with('backup')
+        ->orderBy('created_at', 'desc')
+        ->get();
     
         return Inertia::render('Projects/ViewProject', [
             'project' => $project,
-            'backups' => $backups,
-            'chartData' => $chartData
+            'createdBackups' => $createdBackups,
+            'backupConfigs' => $project->backups // If you need the configurations too
         ]);
     }
+    
     
 }
