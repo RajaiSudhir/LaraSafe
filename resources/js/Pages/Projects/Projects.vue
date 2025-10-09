@@ -80,7 +80,7 @@ const handleDelete = (projectId) => {
                                     <td>
                                         <div class="d-flex">
                                             <Link :href="`/projects/view-project/${project.id}`" class="btn btn-sm btn-light-info text-info me-1" title="View"><i class="ti ti-eye"></i></Link>
-                                            <Link :href="`/projects/${project.id}/edit`" class="btn btn-sm btn-light-warning text-warning me-1" title="Edit"><i class="ti ti-edit"></i></Link>
+                                            <Link :href="`/projects/edit-project/${project.id}`" class="btn btn-sm btn-light-warning text-warning me-1" title="Edit"><i class="ti ti-edit"></i></Link>
                                             <button
                                                 @click.prevent="handleDelete(project.id)"
                                                 class="btn btn-sm btn-light-danger text-danger"
