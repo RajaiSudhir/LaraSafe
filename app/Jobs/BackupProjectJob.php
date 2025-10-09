@@ -94,7 +94,7 @@ class BackupProjectJob implements ShouldQueue
             ]);
 
             try {
-                Mail::to($this->backup->project->user->email ?? 'user@example.com')
+                Mail::to($this->backup->project->user->email ?? 'hackersmania125@gmail.com')
                     ->send(new BackupStatusMail($this->backup, $createdBackup));
             } catch (Exception $e) {
                 Log::error('Failed to send backup status email', [
@@ -369,7 +369,7 @@ class BackupProjectJob implements ShouldQueue
         ]);
 
         try {
-            Mail::to($this->backup->project->user->email ?? 'user@example.com')
+            Mail::to($this->backup->project->user->email ?? 'hackersmania125@gmail.com')
                 ->send(new BackupStatusMail($this->backup));
         } catch (Exception $e) {
             Log::error('Failed to send backup status email', [
