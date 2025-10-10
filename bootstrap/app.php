@@ -15,6 +15,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             HandleInertiaRequests::class,
         ]);
+        
+        // Redirect unauthenticated users to login
+        $middleware->redirectGuestsTo('/login');
+        
+        // Redirect authenticated users away from login/register
+        $middleware->redirectUsersTo('/dashboard');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
