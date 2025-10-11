@@ -119,7 +119,7 @@
                     </tr>
                 </table>
                 @if($backup->status === 'success')
-                <p><a href="http://192.168.1.8:9000/backups/manage-backups" class="btn btn-primary">Download Backup</a></p>
+                <p><a href="{{ config('app.url') }}/backups/manage-backups" class="btn btn-primary">Download Backup</a></p>
                 @endif
             </div>
             <div class="footer">
