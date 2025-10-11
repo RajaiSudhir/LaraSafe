@@ -14,6 +14,7 @@ use ZipArchive;
 use App\Mail\BackupStatusMail;
 use Illuminate\Support\Facades\Mail;
 use Exception;
+use App\Models\User;
 
 class BackupProjectJob implements ShouldQueue
 {
@@ -28,6 +29,7 @@ class BackupProjectJob implements ShouldQueue
 
     public function handle(): void
     {
+        $user = User::all()->first();
         $project = $this->backup->project;
         $sourceDir = rtrim($project->path, '/');
         $baseName = pathinfo($this->backup->file_name, PATHINFO_FILENAME);
@@ -94,7 +96,7 @@ class BackupProjectJob implements ShouldQueue
             ]);
 
             try {
-                Mail::to($this->backup->project->user->email ?? 'sudhirrajai@proton.me')
+                Mail::to($user->email)
                     ->send(new BackupStatusMail($this->backup, $createdBackup));
             } catch (Exception $e) {
                 Log::error('Failed to send backup status email', [
@@ -357,6 +359,7 @@ class BackupProjectJob implements ShouldQueue
 
     private function handleBackupFailure($openResult, $fullPath): void
     {
+        $user = User::all()->first();
         Log::error('ZipArchive failed to open', [
             'fullPath' => $fullPath,
             'code' => $openResult,
@@ -369,7 +372,7 @@ class BackupProjectJob implements ShouldQueue
         ]);
 
         try {
-            Mail::to($this->backup->project->user->email ?? 'sudhirrajai@proton.me')
+            Mail::to($user->email)
                 ->send(new BackupStatusMail($this->backup));
         } catch (Exception $e) {
             Log::error('Failed to send backup status email', [
