@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <link rel="shortcut icon" type="image/png" href="/assets/images/logos/favicon.png" />
     <link rel="stylesheet" href="/assets/css/styles.min.css" />
+    @routes
     @vite('resources/js/app.js')
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @inertiaHead

@@ -5,19 +5,24 @@ use Inertia\Inertia;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProjectsController;
 use App\Http\Controllers\BackupController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Auth\AuthController;
 
 // Route::get('/login', [DashboardController::class, 'index'])->name('login');
 
 Route::middleware('guest')->group(function () {
     Route::get('login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('login', [AuthController::class, 'login'])
-    ->name('login.post')
-    ->middleware('throttle:5,1');
+    Route::post('login', [AuthController::class, 'login'])->name('login.post');
 });
 
 Route::middleware('auth')->group(function () {
     Route::post('logout', [AuthController::class, 'logout'])->name('logout');
+
+    Route::prefix('profile')->group(function () {
+        Route::get('/', [ProfileController::class, 'edit'])->name('profile.edit');
+        Route::post('/update', [ProfileController::class, 'update'])->name('profile.update');
+        Route::put('/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+    });
 
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.view');
