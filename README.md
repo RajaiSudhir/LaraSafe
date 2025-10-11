@@ -225,4 +225,3 @@ Please adhere to our [Code of Conduct](link-to-code-of-conduct).
 ## 📄 License
 
 Feel free to use, modify, and distribute!
-```
