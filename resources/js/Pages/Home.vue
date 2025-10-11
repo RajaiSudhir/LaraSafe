@@ -280,7 +280,7 @@ const getTimeUntil = (dateStr) => {
                 <div class="card-body p-4">
                     <div class="d-flex mb-4 justify-content-between align-items-center">
                         <h5 class="mb-0 fw-bold">Project Statistics</h5>
-                        <Link href="/projects" class="btn btn-sm btn-outline-primary">Manage Projects</Link>
+                        <Link href="/projects/manage-projects" class="btn btn-sm btn-outline-primary">Manage Projects</Link>
                     </div>
 
                     <div class="table-responsive">
