@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -22,19 +25,30 @@ class AuthController extends Controller
             'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
-        
+    
+        $key = Str::lower($request->input('email')).'|'.$request->ip();
+    
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            $seconds = RateLimiter::availableIn($key);
+            throw ValidationException::withMessages([
+                'email' => "Too many login attempts. Please try again after {$seconds} seconds.",
+            ]);
+        }
+    
         $remember = $request->boolean('remember');
-        
+    
         if (Auth::attempt($credentials, $remember)) {
+            RateLimiter::clear($key);
             $request->session()->regenerate();
             return redirect()->intended('dashboard');
         }
-        
-        return back()->withErrors([
-            'email' => 'The provided credentials do not match our records.',
-        ])->onlyInput('email');
-    }
     
+        RateLimiter::hit($key, 60); // 60 = decay seconds (1 minute)
+    
+        throw ValidationException::withMessages([
+            'email' => 'Invalid credentials. Please try again.',
+        ]);
+    }
     
     public function logout(Request $request)
     {

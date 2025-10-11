@@ -117,7 +117,7 @@ class BackupController extends Controller
 
         BackupProjectJob::dispatch($backup);
 
-        Mail::to($backup->project->user->email ?? 'hackersmania125@gmail.com')
+        Mail::to($backup->project->user->email ?? 'sudhirrajai@proton.me')
             ->send(new \App\Mail\BackupStatusMail($backup));
 
         return back()->with('status', 'Backup created successfully!');
@@ -157,7 +157,7 @@ class BackupController extends Controller
         $backup = Backup::findOrFail($id);
         $backup->update(['status' => 'pending']);
 
-        Mail::to($backup->project->user->email ?? 'hackersmania125@gmail.com')
+        Mail::to($backup->project->user->email ?? 'sudhirrajai@proton.me')
         ->send(new \App\Mail\BackupStatusMail($backup));
         BackupProjectJob::dispatch($backup);
 
@@ -461,7 +461,7 @@ class BackupController extends Controller
 
         BackupProjectJob::dispatch($backup);
 
-        Mail::to($backup->project->user->email ?? 'hackersmania125@gmail.com')
+        Mail::to($backup->project->user->email ?? 'sudhirrajai@proton.me')
             ->send(new \App\Mail\BackupStatusMail($backup));
 
         return redirect()
