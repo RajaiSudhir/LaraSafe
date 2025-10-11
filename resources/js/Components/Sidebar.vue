@@ -1,63 +1,82 @@
 <script setup>
-import { Link } from '@inertiajs/vue3'
-</script>
-<template>
+import { Link, usePage } from '@inertiajs/vue3'
+import { computed } from 'vue'
 
-    <!-- Sidebar Start -->
-    <aside class="left-sidebar">
-        <!-- Sidebar scroll-->
-        <div>
-            <div class="brand-logo d-flex align-items-center justify-content-between">
-                <a href="/" class="text-nowrap logo-img">
-                    <img src="/public/assets/images/logos/logo.png" width="200px" alt=""
-                        style="margin-top:10px; margin-bottom:-20px;" />
-                </a>
-                <div class="close-btn d-xl-none d-block js-side-toggle cursor-pointer" id="sidebarCollapse">
-                    <i class="ti ti-x fs-8"></i>
-                </div>
-            </div>
-            <!-- Sidebar navigation-->
-            <nav class="sidebar-nav scroll-sidebar" data-simplebar="">
-                <ul id="sidebarnav">
-                    <li class="nav-small-cap">
-                        <iconify-icon icon="solar:menu-dots-linear" class="nav-small-cap-icon fs-4"></iconify-icon>
-                    </li>
-                    <li class="sidebar-item">
-                        <Link class="sidebar-link primary-hover-bg" :href="`/`" aria-expanded="false">
-                        <iconify-icon icon="solar:atom-line-duotone"></iconify-icon>
-                        <span class="hide-menu">Dashboard</span>
-                        </Link>
-                    </li>
-                    <!-- ---------------------------------- -->
-                    <!-- Dashboard -->
-                    <!-- ---------------------------------- -->
-                    <li class="sidebar-item">
-                        <Link class="sidebar-link primary-hover-bg justify-content-between"
-                            :href="`/projects/manage-projects`" aria-expanded="false">
-                        <div class="d-flex align-items-center gap-6">
-                            <span class="d-flex">
-                                <iconify-icon icon="solar:screencast-2-line-duotone" class=""></iconify-icon>
-                            </span>
-                            <span class="hide-menu">Manage Projects</span>
-                        </div>
-                        </Link>
-                    </li>
-                    <li class="sidebar-item">
-                        <Link class="sidebar-link primary-hover-bg justify-content-between" target="_blank"
-                            :href="`/backups/manage-backups`" aria-expanded="false">
-                        <div class="d-flex align-items-center gap-6">
-                            <span class="d-flex">
-                                <iconify-icon icon="solar:chart-line-duotone" class=""></iconify-icon>
-                            </span>
-                            <span class="hide-menu">Manage Backups</span>
-                        </div>
-                        </Link>
-                    </li>
-                </ul>
-            </nav>
-            <!-- End Sidebar navigation -->
+const page = usePage()
+const currentUrl = computed(() => page.url) // '/backups/manage-backups'
+
+const isActiveExact = (path) => currentUrl.value === path
+const isActiveStartsWith = (prefix) => currentUrl.value.startsWith(prefix)
+</script>
+
+<template>
+  <!-- Sidebar Start -->
+  <aside class="left-sidebar">
+    <div>
+      <div class="brand-logo d-flex align-items-center justify-content-between">
+        <Link href="/" class="text-nowrap logo-img">
+          <img src="/public/assets/images/logos/logo.png" width="200" alt="" style="margin-top:10px; margin-bottom:-20px;" />
+        </Link>
+        <div class="close-btn d-xl-none d-block js-side-toggle cursor-pointer" id="sidebarCollapse">
+          <i class="ti ti-x fs-8"></i>
         </div>
-        <!-- End Sidebar scroll-->
-    </aside>
-    <!--  Sidebar End -->
+      </div>
+
+      <nav class="sidebar-nav scroll-sidebar" data-simplebar="">
+        <ul id="sidebarnav">
+          <li class="nav-small-cap">
+            <iconify-icon icon="solar:menu-dots-linear" class="nav-small-cap-icon fs-4"></iconify-icon>
+          </li>
+
+          <li class="sidebar-item">
+            <Link
+              :href="`/`"
+              :class="['sidebar-link','primary-hover-bg', { active: isActiveExact('/') }]"
+              aria-expanded="false"
+            >
+              <iconify-icon icon="solar:atom-line-duotone"></iconify-icon>
+              <span class="hide-menu">Dashboard</span>
+            </Link>
+          </li>
+
+          <li class="sidebar-item">
+            <Link
+              :href="`/projects/manage-projects`"
+              :class="[
+                'sidebar-link','primary-hover-bg','justify-content-between',
+                { active: isActiveStartsWith('/projects') }
+              ]"
+              aria-expanded="false"
+            >
+              <div class="d-flex align-items-center gap-6">
+                <span class="d-flex">
+                  <iconify-icon icon="solar:screencast-2-line-duotone"></iconify-icon>
+                </span>
+                <span class="hide-menu">Manage Projects</span>
+              </div>
+            </Link>
+          </li>
+
+          <li class="sidebar-item">
+            <Link
+              :href="`/backups/manage-backups`"
+              :class="[
+                'sidebar-link','primary-hover-bg','justify-content-between',
+                { active: isActiveStartsWith('/backups') }
+              ]"
+              aria-expanded="false"
+            >
+              <div class="d-flex align-items-center gap-6">
+                <span class="d-flex">
+                  <iconify-icon icon="solar:chart-line-duotone"></iconify-icon>
+                </span>
+                <span class="hide-menu">Manage Backups</span>
+              </div>
+            </Link>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </aside>
+  <!-- Sidebar End -->
 </template>
