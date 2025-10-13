@@ -74,12 +74,10 @@ const handleAvatarChange = (event) => {
 const updateProfile = () => {
   profileForm.post('/profile/update', {
     onSuccess: () => {
-
       avatarPreview.value = props.user.avatar
         ? `/storage/${props.user.avatar}?t=${Date.now()}`
         : '/assets/images/profile/user1.jpg'
       
-      // Reset form data
       profileForm.name = props.user.name
       profileForm.email = props.user.email
       profileForm.avatar = null

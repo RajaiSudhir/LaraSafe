@@ -11,7 +11,6 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 
 class AuthController extends Controller
 {
@@ -22,15 +21,9 @@ class AuthController extends Controller
     
     public function login(Request $request)
     {
-        $user = Auth::user();
-        logger($user);
         $credentials = $request->validate([
-        'email' => [
-            'required',
-            'email',
-            'max:255',
-            Rule::unique('users')->ignore($user->id)
-        ],            'password' => ['required'],
+            'email' => ['required', 'email'],
+            'password' => ['required'],
         ]);
     
         $key = Str::lower($request->input('email')).'|'.$request->ip();
