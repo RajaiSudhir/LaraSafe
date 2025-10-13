@@ -9,16 +9,6 @@ import axios from 'axios'
 axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest'
 axios.defaults.withCredentials = true // ✅ include cookies automatically
 
-const token = document
-  .querySelector('meta[name="csrf-token"]')
-  ?.getAttribute('content')
-
-if (token) {
-  axios.defaults.headers.common['X-CSRF-TOKEN'] = token
-} else {
-  console.error('⚠️ CSRF token not found in meta tag')
-}
-
 // 🧩 2. Inertia app init
 createInertiaApp({
   resolve: name => {
