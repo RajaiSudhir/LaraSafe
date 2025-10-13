@@ -74,9 +74,7 @@ const handleAvatarChange = (event) => {
 const updateProfile = () => {
   profileForm.post('/profile/update', {
     onSuccess: () => {
-      // ✅ Fixed: Properly handle avatar preview
-      // If user has an avatar (old or new), show it with cache-busting timestamp
-      // Otherwise, show default image
+
       avatarPreview.value = props.user.avatar
         ? `/storage/${props.user.avatar}?t=${Date.now()}`
         : '/assets/images/profile/user1.jpg'
