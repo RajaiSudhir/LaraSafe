@@ -4,31 +4,16 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
 
 class AddXsrfTokenCookie
 {
-    /**
-     * Handle an incoming request.
-     */
-    public function handle(Request $request, Closure $next): Response
+    public function handle(Request $request, Closure $next)
     {
         $response = $next($request);
 
-        // Force add XSRF-TOKEN cookie on every response
-        if (!$response->headers->getCookies()) {
+        if ($request->isMethod('get') && !$request->routeIs('sanctum.*')) {
             $response->headers->setCookie(
-                cookie(
-                    'XSRF-TOKEN',
-                    csrf_token(),
-                    60 * config('session.lifetime'),
-                    config('session.path'),
-                    config('session.domain'),
-                    config('session.secure'),
-                    false,  // HttpOnly MUST be false for JavaScript access
-                    false,
-                    config('session.same_site')
-                )
+                cookie('XSRF-TOKEN', csrf_token(), 0, '/', null, true, false, false, 'Lax')
             );
         }
 
