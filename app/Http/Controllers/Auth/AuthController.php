@@ -1,61 +1,65 @@
 <?php
 
-namespace App\Http\Controllers\Auth;
+namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use App\Models\User;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Str;
 
-class AuthController extends Controller
+class ProfileController extends Controller
 {
-    public function showLogin()
+    public function edit()
     {
-        return Inertia::render('Auth/Login');
-    }
-    
-    public function login(Request $request)
-    {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required'],
-        ]);
-    
-        $key = Str::lower($request->input('email')).'|'.$request->ip();
-    
-        if (RateLimiter::tooManyAttempts($key, 5)) {
-            $seconds = RateLimiter::availableIn($key);
-            throw ValidationException::withMessages([
-                'email' => "Too many login attempts. Please try again after {$seconds} seconds.",
-            ]);
-        }
-    
-        $remember = $request->boolean('remember');
-    
-        if (Auth::attempt($credentials, $remember)) {
-            RateLimiter::clear($key);
-            $request->session()->regenerate();
-            return redirect()->intended('dashboard');
-        }
-    
-        RateLimiter::hit($key, 60); // 60 = decay seconds (1 minute)
-    
-        throw ValidationException::withMessages([
-            'email' => 'Invalid credentials. Please try again.',
+        return Inertia::render('Profile/Edit', [
+            'user' => Auth::user()
         ]);
     }
-    
-    public function logout(Request $request)
+
+    public function update(Request $request)
     {
-        Auth::logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        $user = Auth::user();
         
-        return redirect('/login');
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('users')->ignore($user->id)
+            ],
+            'avatar' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+        ]);
+
+        // Handle avatar upload
+        if ($request->hasFile('avatar')) {
+            // Delete old avatar if exists
+            if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
+                Storage::disk('public')->delete($user->avatar);
+            }
+            
+            $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            $validated['avatar'] = $avatarPath;
+        }
+
+        $user->update($validated);
+
+        return redirect()->route('profile.edit')->with('success', 'Profile updated successfully!');
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $validated = $request->validate([
+            'current_password' => ['required', 'current_password'],
+            'password' => ['required', 'min:8', 'confirmed'],
+        ]);
+
+        Auth::user()->update([
+            'password' => Hash::make($validated['password'])
+        ]);
+
+        return redirect()->route('profile.edit')->with('success', 'Password updated successfully!');
     }
 }
