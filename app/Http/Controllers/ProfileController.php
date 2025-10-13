@@ -17,37 +17,44 @@ class ProfileController extends Controller
         ]);
     }
 
+    public function updateAvatar(Request $request)
+    {
+        $user = auth()->user();
+
+        $validated = $request->validate([
+            'avatar' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ]);
+
+        // Delete old avatar if exists
+        if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
+            Storage::disk('public')->delete($user->avatar);
+        }
+
+        // Store new avatar
+        $path = $request->file('avatar')->store('avatars', 'public');
+
+        $user->update(['avatar' => $path]);
+
+        return back()->with('success', 'Avatar updated successfully!');
+    }
+
     public function update(Request $request)
     {
         $user = auth()->user();
-        
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
-            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
 
-        $updateData = [
+        $user->update([
             'name' => $validated['name'],
             'email' => $validated['email'],
-        ];
+        ]);
 
-        if ($request->hasFile('avatar')) {
-            // Delete old avatar if exists
-            if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
-                Storage::disk('public')->delete($user->avatar);
-            }
-
-            // Store new avatar and add to update data
-            $path = $request->file('avatar')->store('avatars', 'public');
-            $updateData['avatar'] = $path;
-        }
-
-        $user->update($updateData);
-
-        return redirect()->route('profile.edit')
-            ->with('success', 'Profile updated successfully!');
+        return back()->with('success', 'Profile updated successfully!');
     }
+
 
     public function updatePassword(Request $request)
     {
@@ -55,12 +62,11 @@ class ProfileController extends Controller
             'current_password' => ['required', 'current_password'],
             'password' => ['required', 'confirmed', Password::min(8)],
         ]);
-    
+
         auth()->user()->update([
             'password' => Hash::make($validated['password']),
         ]);
-    
+
         return back()->with('success', 'Password changed successfully!');
     }
-    
 }

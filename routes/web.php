@@ -20,7 +20,8 @@ Route::middleware('auth')->group(function () {
 
     Route::prefix('profile')->group(function () {
         Route::get('/', [ProfileController::class, 'edit'])->name('profile.edit');
-        Route::put('/update', [ProfileController::class, 'update'])->name('profile.update');
+        Route::post('/update', [ProfileController::class, 'update'])->name('profile.update');
+        Route::post('/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar.update');
         Route::put('/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
     });
 
