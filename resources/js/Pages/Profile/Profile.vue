@@ -107,7 +107,7 @@ const uploadAvatar = () => {
 
 // Update profile info only (no files)
 const updateProfile = () => {
-  profileForm.put('/profile/update', {
+  profileForm.post('/profile/update', {
     preserveScroll: true,
     onSuccess: () => {
       profileForm.name = props.user.name
