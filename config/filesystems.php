@@ -41,7 +41,7 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => env('APP_URL').'/storage',
+            'url' => env('APP_URL') . '/storage',
             'visibility' => 'public',
             'throw' => false,
             'report' => false,
@@ -63,6 +63,20 @@ return [
         'backups' => [
             'driver' => 'local',
             'root'   => storage_path('app/private/backups'),
+        ],
+
+        'backblaze' => [
+            'driver' => 's3',
+            'key' => env('B2_ACCESS_KEY_ID'),
+            'secret' => env('B2_SECRET_ACCESS_KEY'),
+            'region' => env('B2_DEFAULT_REGION', 'us-west-004'),
+            'bucket' => env('B2_BUCKET'),
+            'endpoint' => env('B2_ENDPOINT'),
+            'use_path_style_endpoint' => env('B2_USE_PATH_STYLE_ENDPOINT', false),
+            'throw' => true,
+            // Critical for Laravel 11 compatibility
+            'request_checksum_calculation' => 'when_required',
+            'response_checksum_validation' => 'when_required',
         ],
 
     ],

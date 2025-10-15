@@ -82,12 +82,18 @@ const handleAvatarChange = (event) => {
 const uploadAvatar = () => {
   avatarForm.post('/profile/avatar', {
     preserveScroll: true,
+    forceFormData: true, // <-- this is crucial for file uploads
     onSuccess: () => {
-      avatarPreview.value = props.user.avatar
-        ? `/storage/${props.user.avatar}?t=${Date.now()}`
-        : '/assets/images/profile/user1.jpg'
-      
-      avatarForm.avatar = null
+      avatarPreview.value = `/storage/${page.props.auth.user.avatar}?t=${Date.now()}`
+      avatarForm.reset()
+      Swal.fire({
+        icon: 'success',
+        title: 'Avatar updated!',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 2000,
+      })
     },
     onError: (errors) => {
       const errorMessages = Object.values(errors).flat().join('<br>')
@@ -96,22 +102,23 @@ const uploadAvatar = () => {
         title: 'Upload Error',
         html: errorMessages,
       })
-      
-      // Revert preview on error
-      avatarPreview.value = props.user.avatar
-        ? `/storage/${props.user.avatar}`
-        : '/assets/images/profile/user1.jpg'
     },
   })
 }
 
 // Update profile info only (no files)
 const updateProfile = () => {
-  profileForm.post('/profile/update', {
+  profileForm.patch('/profile/update', {
     preserveScroll: true,
     onSuccess: () => {
-      profileForm.name = props.user.name
-      profileForm.email = props.user.email
+      Swal.fire({
+        icon: 'success',
+        title: 'Profile updated!',
+        toast: true,
+        position: 'top-end',
+        timer: 2000,
+        showConfirmButton: false
+      })
     },
     onError: (errors) => {
       const errorMessages = Object.values(errors).flat().join('<br>')

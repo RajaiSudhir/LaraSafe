@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
+use App\Models\User;
 
 class ProfileController extends Controller
 {
@@ -19,21 +20,21 @@ class ProfileController extends Controller
 
     public function updateAvatar(Request $request)
     {
-        $user = auth()->user();
-
-        $validated = $request->validate([
-            'avatar' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        $request->validate([
+            'avatar' => 'required|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
-        // Delete old avatar if exists
+        $user = auth()->user();
+
+        // delete old avatar if you want (optional)
         if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
             Storage::disk('public')->delete($user->avatar);
         }
 
-        // Store new avatar
         $path = $request->file('avatar')->store('avatars', 'public');
 
-        $user->update(['avatar' => $path]);
+        $user->avatar = $path;
+        $user->save();
 
         return back()->with('success', 'Avatar updated successfully!');
     }
@@ -43,8 +44,8 @@ class ProfileController extends Controller
         $user = auth()->user();
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'name'  => 'required|string|max:255',
+            'email' => 'required|email|max:255',
         ]);
 
         $user->update([
@@ -54,7 +55,6 @@ class ProfileController extends Controller
 
         return back()->with('success', 'Profile updated successfully!');
     }
-
 
     public function updatePassword(Request $request)
     {
